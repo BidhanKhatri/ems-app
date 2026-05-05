@@ -46,8 +46,10 @@ export default function SettingsScreen() {
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'E'}</Text>
             </View>
-            <Text style={styles.userName}>{user?.name || 'Employee'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'email@company.com'}</Text>
+            <View style={styles.profileInfo}>
+              <Text style={styles.userName}>{user?.name || 'Employee'}</Text>
+              <Text style={styles.userEmail}>{user?.email || 'email@company.com'}</Text>
+            </View>
             <View style={styles.roleBadge}>
               <Text style={styles.roleText}>{user?.role || 'EMPLOYEE'}</Text>
             </View>
@@ -61,22 +63,13 @@ export default function SettingsScreen() {
               <View style={styles.divider} />
               <SettingItem icon="mail-outline" label="Email Address" value={user?.email} showArrow={false} />
               <View style={styles.divider} />
-              <SettingItem icon="shield-outline" label="Account Role" value={user?.role} showArrow={false} />
-            </View>
-          </View>
-
-          <View style={styles.group}>
-            <Text style={styles.groupTitle}>Preferences</Text>
-            <View style={styles.card}>
-              <SettingItem icon="notifications-outline" label="Notifications" value="Enabled" />
-              <View style={styles.divider} />
-              <SettingItem icon="lock-closed-outline" label="Change Password" />
+              <SettingItem icon="shield-checkmark-outline" label="Account Role" value={user?.role} showArrow={false} />
             </View>
           </View>
 
           <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
             <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
-            <Text style={styles.logoutText}>Sign Out of Account</Text>
+            <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
           
           <Text style={styles.versionText}>Version 1.0.0 (Build 2024.05.04)</Text>
@@ -130,6 +123,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     borderRadius: RADIUS.lg,
     padding: SPACING.lg,
+    flexDirection: 'row',
     alignItems: 'center',
     marginBottom: SPACING.lg,
     borderWidth: 1,
@@ -137,21 +131,24 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: COLORS.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: SPACING.sm,
+    marginRight: SPACING.md,
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: COLORS.white,
   },
+  profileInfo: {
+    flex: 1,
+  },
   userName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
     color: COLORS.textMain,
   },
@@ -163,9 +160,9 @@ const styles = StyleSheet.create({
   roleBadge: {
     backgroundColor: COLORS.indigo50,
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: RADIUS.full,
-    marginTop: SPACING.sm,
+    marginLeft: SPACING.sm,
   },
   roleText: {
     fontSize: 9,
@@ -228,19 +225,20 @@ const styles = StyleSheet.create({
   },
   logoutBtn: {
     flexDirection: 'row',
-    backgroundColor: COLORS.red50,
-    paddingVertical: 14,
+    backgroundColor: COLORS.white,
+    paddingVertical: 16,
     borderRadius: RADIUS.md,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: SPACING.md,
     borderWidth: 1,
-    borderColor: '#fee2e2',
+    borderColor: COLORS.danger,
+    ...SHADOWS.sm,
   },
   logoutText: {
     color: COLORS.danger,
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
     marginLeft: 8,
   },
   versionText: {
