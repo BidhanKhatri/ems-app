@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "948977806167",
+    "project_id": "ems-notification-6d8c9",
+    "storage_bucket": "ems-notification-6d8c9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:948977806167:android:1f3d7bb35a0d82a745ac12",
+        "android_client_info": {
+          "package_name": "com.ems.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHqyyuchp6S6Tzz3E-vZPdzx0UQ3yqa94"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

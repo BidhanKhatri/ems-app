@@ -15,6 +15,7 @@ import {
   Image,
   StatusBar,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { API_BASE_URL } from '../../utils/config';
@@ -23,6 +24,7 @@ import useAuthStore from '../../store/useAuthStore';
 import SlideButton from '../../components/SlideButton';
 
 export default function AttendanceScreen() {
+  const insets = useSafeAreaInsets();
   const { user, fetchProfile } = useAuthStore();
   const [todayStatus, setTodayStatus] = useState(null);
   const [settings, setSettings] = useState(null);
@@ -173,7 +175,7 @@ export default function AttendanceScreen() {
       <View style={styles.headerWrapper}>
         <View style={styles.headerBackground} />
         <SafeAreaView style={{ flex: 0 }}>
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, 16) : 16 }]}>
             <View style={styles.headerLeft}>
               <View style={styles.profileBorder}>
                 {profileUrl ? (
@@ -384,10 +386,10 @@ export default function AttendanceScreen() {
               You are checking out before {formatSimpleTime(settings?.checkOutTime)}. This may affect your performance score.
             </Text>
             <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.confirmBtn} onPress={() => handleCheckOut(true)}>
+              <TouchableOpacity style={styles.confirmBtn} onPress={() => handleCheckOut(true)} activeOpacity={0.7}>
                 <Text style={styles.confirmBtnText}>Confirm Early Check-out</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowEarlyModal(false)}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowEarlyModal(false)} activeOpacity={0.7}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
             </View>
@@ -420,9 +422,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
     paddingBottom: SPACING.xxl,
-    marginTop: Platform.OS === 'android' ? 10 : 0,
   },
   headerLeft: {
     flexDirection: 'row',

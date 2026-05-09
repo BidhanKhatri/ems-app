@@ -4,7 +4,7 @@ import { Platform } from 'react-native';
 // 2. FOR ANDROID EMULATORS: Use '10.0.2.2'
 // 3. FOR IOS SIMULATORS: Use 'localhost' or your computer's IP
 
-const MAC_IP = '192.168.1.113';
+const MAC_IP = '192.168.1.95';
 
 const host = Platform.select({
   android: MAC_IP, // Change to '10.0.2.2' if using Android Emulator

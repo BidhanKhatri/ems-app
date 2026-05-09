@@ -16,6 +16,7 @@ import {
   Pressable,
   Animated,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { API_BASE_URL } from '../../utils/config';
@@ -138,6 +139,7 @@ function NotificationCard({ item, onMarkRead, onPreviewImage }) {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -199,14 +201,11 @@ export default function NotificationsScreen() {
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
       {/* ── Header ── */}
-      <View style={styles.headerWrapper}>
+      <View style={[styles.headerWrapper, { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, 10) : 0 }]}>
         <SafeAreaView style={{ flex: 0 }}>
           <View style={styles.header}>
             <View>
               <Text style={styles.headerTitle}>Notifications</Text>
-              {unreadCount > 0 && (
-                <Text style={styles.headerSubtitle}>{unreadCount} unread</Text>
-              )}
             </View>
             <View style={styles.headerBadgeWrap}>
               <Ionicons name="notifications" size={22} color={COLORS.white} />
@@ -312,20 +311,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F4F6FB',
   },
-  safeArea: { flex: 1 },
+  safeArea: {
+    flex: 1,
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#F4F6FB',
   },
-
-  // Header
   headerWrapper: {
     backgroundColor: COLORS.primary,
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     ...SHADOWS.md,
     zIndex: 10,
   },
@@ -367,9 +365,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: COLORS.primary,
   },
-  badgeText: { fontSize: 9, fontWeight: '800', color: COLORS.white },
-
-  // Filter tabs
+  badgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: COLORS.white,
+  },
   filterRow: {
     flexDirection: 'row',
     paddingHorizontal: SPACING.lg,
@@ -406,15 +406,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   filterBadgeActive: {
-    backgroundColor: COLORS.primary + '18',
+    backgroundColor: `${COLORS.primary}18`,
   },
   filterBadgeText: {
     fontSize: 10,
     fontWeight: '800',
     color: COLORS.white,
   },
-
-  // Section label
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
@@ -424,15 +422,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     marginLeft: 2,
   },
-
-  // List
   listContent: {
     padding: SPACING.md,
     paddingTop: SPACING.md,
     paddingBottom: 100,
   },
-
-  // Empty state
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -460,8 +454,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 19,
   },
-
-  // Card
   card: {
     backgroundColor: COLORS.white,
     borderRadius: 12,
@@ -489,7 +481,7 @@ const styles = StyleSheet.create({
   cardInner: {
     flexDirection: 'row',
     padding: 12,
-    paddingRight: 36, // room for unread dot
+    paddingRight: 36,
     alignItems: 'flex-start',
   },
   iconCircle: {
@@ -563,8 +555,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.primary,
   },
-
-  // Modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.82)',

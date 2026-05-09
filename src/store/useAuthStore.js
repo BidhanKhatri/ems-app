@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
+import PushNotificationService from '../services/PushNotificationService';
 
 const useAuthStore = create((set, get) => ({
   user: null,
@@ -18,6 +19,13 @@ const useAuthStore = create((set, get) => ({
       }
       const user = JSON.parse(userRaw);
       set({ user, token, isAuthenticated: true, isLoading: false });
+      
+      // Initialize Push Notifications
+      if (await PushNotificationService.requestUserPermission()) {
+        await PushNotificationService.getFCMToken(token);
+        PushNotificationService.onTokenRefresh(token);
+      }
+
       await get().fetchProfile();
     } catch (error) {
       await get().logout();
@@ -35,6 +43,13 @@ const useAuthStore = create((set, get) => ({
     await AsyncStorage.setItem('user', JSON.stringify(nextUser));
 
     set({ user: nextUser, token: nextToken, isAuthenticated: true });
+
+    // Initialize Push Notifications
+    if (await PushNotificationService.requestUserPermission()) {
+      await PushNotificationService.getFCMToken(nextToken);
+      PushNotificationService.onTokenRefresh(nextToken);
+    }
+
     return nextUser;
   },
 
@@ -60,6 +75,10 @@ const useAuthStore = create((set, get) => ({
   },
   
   logout: async () => {
+    const { token } = get();
+    if (token) {
+      await PushNotificationService.removeTokenFromBackend(token);
+    }
     await AsyncStorage.multiRemove(['token', 'user']);
     set({ user: null, token: null, isAuthenticated: false });
   },

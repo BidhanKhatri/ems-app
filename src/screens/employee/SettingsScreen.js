@@ -1,14 +1,22 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, StatusBar, Platform, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../../store/useAuthStore';
+import { API_BASE_URL } from '../../utils/config';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
 
+  const profileImage = user?.profilePicture || user?.profileImage || user?.image;
+  const profileUrl = profileImage
+    ? (profileImage.startsWith('http') ? profileImage : `${API_BASE_URL.replace('/api', '')}/${profileImage.replace(/\\/g, '/')}`)
+    : null;
+
   const SettingItem = ({ icon, label, value, color = COLORS.textMain, showArrow = true }) => (
-    <TouchableOpacity style={styles.settingItem}>
+    <TouchableOpacity style={styles.settingItem} activeOpacity={0.7}>
       <View style={styles.settingLeft}>
         <View style={[styles.iconBox, { backgroundColor: COLORS.background }]}>
           <Ionicons name={icon} size={20} color={COLORS.primary} />
@@ -25,12 +33,12 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
+
       {/* Fixed elevated header layer */}
       <View style={styles.headerWrapper}>
         <View style={styles.headerBackground} />
         <SafeAreaView style={{ flex: 0 }}>
-          <View style={styles.header}>
+          <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, 16) : 16 }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Ionicons name="person" size={24} color={COLORS.white} style={{ marginRight: SPACING.sm }} />
               <Text style={styles.headerTitle}>Profile & Settings</Text>
@@ -44,7 +52,11 @@ export default function SettingsScreen() {
           {/* Profile Card */}
           <View style={styles.profileCard}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'E'}</Text>
+              {profileUrl ? (
+                <Image source={{ uri: profileUrl }} style={styles.profileImg} />
+              ) : (
+                <Text style={styles.avatarText}>{user?.name?.charAt(0) || 'E'}</Text>
+              )}
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.userName}>{user?.name || 'Employee'}</Text>
@@ -57,6 +69,28 @@ export default function SettingsScreen() {
 
           {/* Settings Groups */}
           <View style={styles.group}>
+            <Text style={styles.groupTitle}>Quick Access</Text>
+            <View style={styles.card}>
+              <TouchableOpacity
+                style={styles.settingItem}
+                activeOpacity={0.7}
+                onPress={() => Linking.openURL('https://staffingbetit.com')}
+              >
+                <View style={styles.settingLeft}>
+                  <View style={[styles.iconBox, { backgroundColor: COLORS.indigo50 }]}>
+                    <Ionicons name="globe-outline" size={20} color={COLORS.primary} />
+                  </View>
+                  <View>
+                    <Text style={styles.settingLabel}>Web Portal</Text>
+                    <Text style={styles.settingValue}>Full web access</Text>
+                  </View>
+                </View>
+                <Ionicons name="open-outline" size={18} color={COLORS.textMuted} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <View style={styles.group}>
             <Text style={styles.groupTitle}>Personal Information</Text>
             <View style={styles.card}>
               <SettingItem icon="person-outline" label="Full Name" value={user?.name} showArrow={false} />
@@ -67,11 +101,11 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.logoutBtn} onPress={logout}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
-          
+
           <Text style={styles.versionText}>Version 1.0.0 (Build 2024.05.04)</Text>
         </ScrollView>
       </SafeAreaView>
@@ -106,9 +140,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.lg,
     paddingBottom: SPACING.xxl,
-    marginTop: Platform.OS === 'android' ? 10 : 0,
   },
   headerTitle: {
     fontSize: 18,
@@ -138,6 +170,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: SPACING.md,
+    overflow: 'hidden',
+  },
+  profileImg: {
+    width: '100%',
+    height: '100%',
   },
   avatarText: {
     fontSize: 22,
@@ -225,21 +262,22 @@ const styles = StyleSheet.create({
   },
   logoutBtn: {
     flexDirection: 'row',
-    backgroundColor: COLORS.white,
-    paddingVertical: 16,
-    borderRadius: RADIUS.md,
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    borderRadius: RADIUS.lg,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.md,
+    marginTop: SPACING.xl,
     borderWidth: 1,
-    borderColor: COLORS.danger,
+    borderColor: '#fee2e2', // Light red border
     ...SHADOWS.sm,
   },
   logoutText: {
     color: COLORS.danger,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
     marginLeft: 8,
+    letterSpacing: 0.5,
   },
   versionText: {
     textAlign: 'center',
