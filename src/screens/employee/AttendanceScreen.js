@@ -476,12 +476,11 @@ const styles = StyleSheet.create({
   scrollContent: { padding: SPACING.lg, paddingTop: SPACING.xl, paddingBottom: 120 },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     padding: SPACING.lg,
     marginBottom: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.sm,
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: SPACING.lg },
   iconBox: {
@@ -538,7 +537,7 @@ const styles = StyleSheet.create({
   rankTagText: { fontSize: 12, fontWeight: '700', color: COLORS.primary },
   leaderboardCard: {
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.border,
@@ -560,7 +559,7 @@ const styles = StyleSheet.create({
   lbScore: { fontSize: 12, fontWeight: '800', color: COLORS.textSecondary },
   lbScoreSelf: { color: COLORS.primary },
   emptyText: { textAlign: 'center', padding: SPACING.xl, color: COLORS.textMuted },
-  snapshotCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.lg, padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.xxl },
+  snapshotCard: { backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: SPACING.lg, borderWidth: 1, borderColor: COLORS.border, marginBottom: SPACING.xxl },
   snapshotTitle: { fontSize: 15, fontWeight: '700', color: COLORS.textMain, marginBottom: SPACING.md },
   snapshotGrid: { flexDirection: 'row', justifyContent: 'space-between' },
   snapBox: { width: '48%', backgroundColor: COLORS.background, padding: SPACING.md, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border },

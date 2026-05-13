@@ -91,7 +91,7 @@ function NotificationCard({ item, onMarkRead, onPreviewImage }) {
         <View style={[styles.iconCircle, { backgroundColor: !item.isRead ? COLORS.primary + '15' : '#F0F2F5' }]}>
           <Ionicons
             name="megaphone"
-            size={20}
+            size={18}
             color={!item.isRead ? COLORS.primary : COLORS.textSecondary}
           />
         </View>
@@ -456,13 +456,13 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: COLORS.white,
-    borderRadius: 12,
+    borderRadius: RADIUS.md, // Decreased from lg
+    padding: SPACING.lg,
     marginBottom: 10,
     borderWidth: 1,
     borderColor: '#E8EAF0',
     paddingVertical: 4,
     overflow: 'hidden',
-    ...SHADOWS.sm,
   },
   unreadCard: {
     backgroundColor: '#EBF5FF',
@@ -480,17 +480,18 @@ const styles = StyleSheet.create({
   },
   cardInner: {
     flexDirection: 'row',
-    padding: 12,
+    padding: 10, // Slightly decreased from 12
+    paddingLeft: 8, // Move everything a bit more to the left
     paddingRight: 36,
     alignItems: 'flex-start',
   },
   iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 44, // Decreased from 56
+    height: 44, // Decreased from 56
+    borderRadius: RADIUS.md, // Match card radius instead of circle
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
     flexShrink: 0,
     marginTop: 2,
   },

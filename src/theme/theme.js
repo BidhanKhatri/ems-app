@@ -28,11 +28,11 @@ export const SPACING = {
 };
 
 export const RADIUS = {
-  xs: 4,
-  sm: 6,
-  md: 8, // Tighter radius as requested
-  lg: 12,
-  xl: 16,
+  xs: 3,
+  sm: 4,
+  md: 6,
+  lg: 10,
+  xl: 14,
   full: 9999,
 };
 
@@ -40,16 +40,16 @@ export const SHADOWS = {
   sm: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOpacity: 0.02, // Further reduced for minimal look
+    shadowRadius: 1,
+    elevation: 0.5,
   },
   md: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.04, // Reduced from 0.08
+    shadowRadius: 3,
+    elevation: 2, // Reduced from 4
   },
   lg: {
     shadowColor: '#000',

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, StatusBar, Platform, Image, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, StatusBar, Platform, Image, Linking, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../../store/useAuthStore';
 import { API_BASE_URL, FRONTEND_BASE_URL } from '../../utils/config';
@@ -9,6 +9,12 @@ import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuthStore();
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogout = () => {
+    setShowLogoutModal(false);
+    logout();
+  };
 
   const profileImage = user?.profilePicture || user?.profileImage || user?.image;
   const profileUrl = profileImage
@@ -101,7 +107,7 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.logoutBtn} onPress={logout} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.logoutBtn} onPress={() => setShowLogoutModal(true)} activeOpacity={0.7}>
             <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
             <Text style={styles.logoutText}>Sign Out</Text>
           </TouchableOpacity>
@@ -109,6 +115,55 @@ export default function SettingsScreen() {
           <Text style={styles.versionText}>Version 1.0.0 (Build 2024.05.04)</Text>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Logout Confirmation Modal (Bottom Sheet Style) */}
+      <Modal
+        visible={showLogoutModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setShowLogoutModal(false)}
+        >
+          <View style={styles.sheetContainer}>
+            <View style={styles.sheetContent}>
+              <View style={styles.sheetIndicator} />
+              
+              <View style={styles.sheetHeader}>
+                <View style={styles.warningIconBox}>
+                  <Ionicons name="log-out" size={28} color="#e11d48" />
+                </View>
+                <Text style={styles.sheetTitle}>Sign Out</Text>
+                <Text style={styles.sheetSubtitle}>Are you sure you want to log out of your account?</Text>
+              </View>
+
+              <View style={styles.sheetButtons}>
+                <TouchableOpacity 
+                  style={styles.confirmLogoutBtn} 
+                  onPress={handleLogout}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.confirmLogoutText}>Yes, Log Out</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.cancelLogoutBtn} 
+                  onPress={() => setShowLogoutModal(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelLogoutText}>Stay Logged In</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Bottom padding for safe area */}
+              <View style={{ height: Math.max(insets.bottom, 20) }} />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -153,14 +208,13 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     backgroundColor: COLORS.white,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md, // Decreased from lg
     padding: SPACING.lg,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: SPACING.lg,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.sm,
   },
   avatar: {
     width: 56,
@@ -225,7 +279,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.sm,
   },
   settingItem: {
     flexDirection: 'row',
@@ -264,13 +317,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#fff',
     paddingVertical: 14,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.md, // Decreased from lg
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: SPACING.xl,
     borderWidth: 1,
     borderColor: '#fee2e2', // Light red border
-    ...SHADOWS.sm,
   },
   logoutText: {
     color: COLORS.danger,
@@ -284,5 +336,83 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: COLORS.textMuted,
     marginTop: SPACING.xl,
+  },
+  // Modal / Bottom Sheet Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  sheetContainer: {
+    backgroundColor: 'transparent',
+  },
+  sheetContent: {
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: RADIUS.xl,
+    borderTopRightRadius: RADIUS.xl,
+    paddingHorizontal: SPACING.xl,
+    paddingTop: SPACING.md,
+  },
+  sheetIndicator: {
+    width: 40,
+    height: 4,
+    backgroundColor: COLORS.border,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: SPACING.lg,
+  },
+  sheetHeader: {
+    alignItems: 'center',
+    marginBottom: SPACING.xxl,
+  },
+  warningIconBox: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#fff1f2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SPACING.md,
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: COLORS.textMain,
+    marginBottom: SPACING.xs,
+  },
+  sheetSubtitle: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: SPACING.md,
+  },
+  sheetButtons: {
+    gap: SPACING.md,
+  },
+  confirmLogoutBtn: {
+    backgroundColor: '#fff1f2', // Soft red/rose background
+    paddingVertical: 16,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fecdd3', // Soft rose border
+  },
+  confirmLogoutText: {
+    color: '#e11d48', // Professional deep rose/red
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  cancelLogoutBtn: {
+    backgroundColor: COLORS.background,
+    paddingVertical: 16,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  cancelLogoutText: {
+    color: COLORS.textSecondary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

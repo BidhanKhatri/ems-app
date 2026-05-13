@@ -146,7 +146,7 @@ export default function SlideButton({ text, onSlide, disabled, color = COLORS.pr
             backgroundColor: color,
             transform: [{ translateX: pan }],
           },
-          SHADOWS.md,
+          SHADOWS.sm,
         ]}
       >
         <Ionicons name="chevron-forward" size={24} color={COLORS.white} />

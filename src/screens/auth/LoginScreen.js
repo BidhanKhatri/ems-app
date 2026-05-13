@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   StatusBar,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../../store/useAuthStore';
@@ -25,21 +26,58 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '' });
   const { login } = useAuthStore();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+  const validateEmail = (val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val.trim());
+
+  const validate = () => {
+    const newErrors = { email: '', password: '' };
+    let valid = true;
+
+    if (!email.trim()) {
+      newErrors.email = 'Email address is required.';
+      valid = false;
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Please enter a valid email address.';
+      valid = false;
     }
+
+    if (!password) {
+      newErrors.password = 'Password is required.';
+      valid = false;
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters.';
+      valid = false;
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
+  const handleLogin = async () => {
+    if (!validate()) return;
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email.trim(), password);
     } catch (error) {
-      Alert.alert('Login Failed', error?.response?.data?.message || 'Invalid credentials');
+      setErrors(prev => ({
+        ...prev,
+        password: error?.response?.data?.message || 'Invalid email or password.',
+      }));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEmailChange = (val) => {
+    setEmail(val);
+    if (errors.email) setErrors(prev => ({ ...prev, email: '' }));
+  };
+
+  const handlePasswordChange = (val) => {
+    setPassword(val);
+    if (errors.password) setErrors(prev => ({ ...prev, password: '' }));
   };
 
   return (
@@ -49,20 +87,27 @@ export default function LoginScreen() {
       {/* Absolute Header Background */}
       <View style={styles.headerBackground} />
 
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
+      {/* KeyboardAvoidingView wraps everything for proper keyboard handling */}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <SafeAreaView style={styles.safeArea}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
+            bounces={false}
           >
             {/* Header Content */}
             <View style={styles.headerContent}>
-              <View style={styles.iconBox}>
-                <Ionicons name="person" size={28} color={COLORS.primary} />
+              <View style={styles.logoCircle}>
+                <Image
+                  source={require('../../../assets/ems-logo.png')}
+                  style={styles.logo}
+                  resizeMode="cover"
+                />
               </View>
               <Text style={styles.headerTitle}>Staff Attendance Portal</Text>
               <Text style={styles.headerSubtitle}>Staffingbetit attendance portal access</Text>
@@ -72,31 +117,40 @@ export default function LoginScreen() {
             <View style={styles.card}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Email Address</Text>
-                <View style={styles.inputWrapper}>
+                <View style={[styles.inputWrapper, errors.email ? styles.inputError : null]}>
                   <Ionicons name="mail-outline" size={20} color={COLORS.textMuted} />
                   <TextInput
                     style={styles.input}
                     placeholder="name@company.com"
                     placeholderTextColor={COLORS.textMuted}
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={handleEmailChange}
                     autoCapitalize="none"
                     keyboardType="email-address"
+                    returnKeyType="next"
                   />
                 </View>
+                {errors.email ? (
+                  <View style={styles.errorRow}>
+                    <Ionicons name="alert-circle-outline" size={13} color="#e11d48" />
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  </View>
+                ) : null}
               </View>
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Password</Text>
-                <View style={styles.inputWrapper}>
+              <View style={[styles.inputWrapper, errors.password ? styles.inputError : null]}>
                   <Ionicons name="key-outline" size={20} color={COLORS.textMuted} />
                   <TextInput
                     style={styles.input}
                     placeholder="••••••••"
                     placeholderTextColor={COLORS.textMuted}
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={handlePasswordChange}
                     secureTextEntry={!showPassword}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
                   />
                   <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
                     <Ionicons
@@ -106,9 +160,13 @@ export default function LoginScreen() {
                     />
                   </TouchableOpacity>
                 </View>
+                {errors.password ? (
+                  <View style={styles.errorRow}>
+                    <Ionicons name="alert-circle-outline" size={13} color="#e11d48" />
+                    <Text style={styles.errorText}>{errors.password}</Text>
+                  </View>
+                ) : null}
               </View>
-
-              {/* Forgot Password removed */}
 
               <TouchableOpacity
                 style={[styles.loginBtn, loading && styles.disabledBtn]}
@@ -128,8 +186,8 @@ export default function LoginScreen() {
               <Text style={styles.footerText}>Secure Enterprise Login</Text>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -155,26 +213,33 @@ const styles = StyleSheet.create({
   keyboardView: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+  },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: SPACING.xl,
     justifyContent: 'center',
-    paddingBottom: SPACING.xxl * 2, // Extra padding for scrolling
+    paddingBottom: 60, // Ensures button stays above keyboard
   },
   headerContent: {
     alignItems: 'center',
-    marginTop: height * 0.05,
-    marginBottom: SPACING.xl,
+    marginTop: -(height * 0.01), // Pushed up
+    marginBottom: SPACING.sm,
   },
-  iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+  logoCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55, // Perfect circle
+    overflow: 'hidden',
     backgroundColor: COLORS.white,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: SPACING.md,
-    ...SHADOWS.sm,
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
+  },
+  logo: {
+    width: '100%',
+    height: '100%',
   },
   headerTitle: {
     fontSize: 26,
@@ -194,7 +259,11 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOWS.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.02,
+    shadowRadius: 2,
+    elevation: 1,
   },
   inputGroup: {
     marginBottom: SPACING.lg,
@@ -255,5 +324,22 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
+  },
+  inputError: {
+    borderColor: '#e11d48',
+    backgroundColor: '#fff1f2',
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 5,
+    marginLeft: 4,
+    gap: 4,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#e11d48',
+    fontWeight: '500',
+    flex: 1,
   },
 });

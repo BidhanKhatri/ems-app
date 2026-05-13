@@ -6,6 +6,7 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import ApprovalStatusScreen from '../screens/auth/ApprovalStatusScreen';
 import PageLoader from '../components/PageLoader';
 import EmployeeTabs from './EmployeeTabs';
+import AdminTabs from './AdminTabs';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,13 +29,21 @@ export default function RootNavigator() {
     );
   }
 
+  if (user.role === 'ADMIN') {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen name="AdminPortal" component={AdminTabs} options={{ headerShown: false }} />
+      </Stack.Navigator>
+    );
+  }
+
   if (user.role !== 'EMPLOYEE') {
     return (
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen
           name="Login"
           component={LoginScreen}
-          initialParams={{ forceMessage: 'This app currently supports employee portal only.' }}
+          initialParams={{ forceMessage: 'Invalid role detected.' }}
         />
       </Stack.Navigator>
     );

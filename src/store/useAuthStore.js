@@ -8,6 +8,7 @@ const useAuthStore = create((set, get) => ({
   token: null,
   isAuthenticated: false,
   isLoading: true,
+  isLoggingOut: false,
 
   bootstrap: async () => {
     try {
@@ -75,12 +76,19 @@ const useAuthStore = create((set, get) => ({
   },
   
   logout: async () => {
-    const { token } = get();
-    if (token) {
-      await PushNotificationService.removeTokenFromBackend(token);
+    set({ isLoggingOut: true });
+    try {
+      const { token } = get();
+      if (token) {
+        await PushNotificationService.removeTokenFromBackend(token);
+      }
+      // Add a small delay for better UX as requested
+      await new Promise(resolve => setTimeout(resolve, 800));
+      await AsyncStorage.multiRemove(['token', 'user']);
+      set({ user: null, token: null, isAuthenticated: false });
+    } finally {
+      set({ isLoggingOut: false });
     }
-    await AsyncStorage.multiRemove(['token', 'user']);
-    set({ user: null, token: null, isAuthenticated: false });
   },
 }));
 
