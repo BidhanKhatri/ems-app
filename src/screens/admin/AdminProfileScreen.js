@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
+  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', letterSpacing: 1 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.white, marginTop: 2 },
   headerIcon: {
     width: 42, height: 42, borderRadius: RADIUS.md,

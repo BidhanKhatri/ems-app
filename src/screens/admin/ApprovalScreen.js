@@ -43,9 +43,9 @@ const getImageUrl = (url) => {
   // Handle case where profilePicture might be an object { url: '...', secure_url: '...' }
   const actualUrl = typeof url === 'object' ? (url.secure_url || url.url || url.path) : url;
   if (!actualUrl || typeof actualUrl !== 'string' || actualUrl === 'null' || actualUrl === 'undefined') return null;
-  
+
   if (actualUrl.startsWith('http')) return actualUrl;
-  
+
   // Handle static assets from the frontend web app
   if (actualUrl.includes('assets/') || actualUrl.includes('emp_')) {
     return `${FRONTEND_BASE_URL}${actualUrl.startsWith('/') ? '' : '/'}${actualUrl}`;
@@ -60,11 +60,11 @@ export default function ApprovalScreen() {
   const [activeTab, setActiveTab] = useState('checkins'); // 'checkins' or 'accounts'
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Data state
   const [checkins, setCheckins] = useState([]);
   const [accounts, setAccounts] = useState([]);
-  
+
   // Account Filters
   const [accountStatus, setAccountStatus] = useState('PENDING'); // ALL, PENDING, APPROVED, REJECTED
   const [search, setSearch] = useState('');
@@ -79,7 +79,7 @@ export default function ApprovalScreen() {
         setCheckins(data);
       } else {
         const { data } = await api.get('/admin/account-approvals', {
-          params: { 
+          params: {
             status: accountStatus === 'ALL' ? '' : accountStatus,
             search: search
           }
@@ -118,8 +118,8 @@ export default function ApprovalScreen() {
       `Are you sure you want to ${status.toLowerCase()} access for ${name}?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Confirm', 
+        {
+          text: 'Confirm',
           onPress: async () => {
             try {
               await api.patch(`/admin/account-approvals/${userId}`, { status });
@@ -138,9 +138,9 @@ export default function ApprovalScreen() {
       <View style={styles.cardHeader}>
         <View style={styles.avatar}>
           {req.userId?.profilePicture ? (
-            <Image 
-              source={{ uri: getImageUrl(req.userId.profilePicture) }} 
-              style={styles.avatarImg} 
+            <Image
+              source={{ uri: getImageUrl(req.userId.profilePicture) }}
+              style={styles.avatarImg}
               resizeMode="cover"
             />
           ) : (
@@ -152,21 +152,21 @@ export default function ApprovalScreen() {
           <Text style={styles.userEmail}>{req.userId?.email}</Text>
         </View>
       </View>
-      
+
       <View style={styles.reasonBox}>
         <Text style={styles.reasonLabel}>LATE REASON</Text>
         <Text style={styles.reasonText}>{req.reason}</Text>
       </View>
 
       <View style={styles.actionRow}>
-        <TouchableOpacity 
-          style={[styles.actionBtn, styles.rejectBtn]} 
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.rejectBtn]}
           onPress={() => handleCheckinAction(req._id, false)}
         >
           <Text style={[styles.actionBtnText, styles.rejectBtnText]}>Reject</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.actionBtn, styles.approveBtn]} 
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.approveBtn]}
           onPress={() => handleCheckinAction(req._id, true)}
         >
           <Text style={[styles.actionBtnText, styles.approveBtnText]}>Approve</Text>
@@ -188,9 +188,9 @@ export default function ApprovalScreen() {
         <View style={styles.cardHeader}>
           <View style={styles.avatar}>
             {emp.profilePicture ? (
-              <Image 
-                source={{ uri: getImageUrl(emp.profilePicture) }} 
-                style={styles.avatarImg} 
+              <Image
+                source={{ uri: getImageUrl(emp.profilePicture) }}
+                style={styles.avatarImg}
                 resizeMode="cover"
               />
             ) : (
@@ -212,22 +212,22 @@ export default function ApprovalScreen() {
         <View style={styles.actionRow}>
           {emp.approvalStatus === 'PENDING' ? (
             <>
-              <TouchableOpacity 
-                style={[styles.actionBtn, styles.rejectBtn, { flex: 1 }]} 
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.rejectBtn, { flex: 1 }]}
                 onPress={() => handleAccountAction(emp._id, 'REJECTED', emp.name)}
               >
                 <Text style={[styles.actionBtnText, styles.rejectBtnText]}>Reject Account</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.actionBtn, styles.approveBtn, { flex: 1 }]} 
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.approveBtn, { flex: 1 }]}
                 onPress={() => handleAccountAction(emp._id, 'APPROVED', emp.name)}
               >
                 <Text style={[styles.actionBtnText, styles.approveBtnText]}>Approve Account</Text>
               </TouchableOpacity>
             </>
           ) : (
-            <TouchableOpacity 
-              style={[styles.actionBtn, { flex: 1, backgroundColor: COLORS.background, borderColor: COLORS.border, borderWidth: 1 }]} 
+            <TouchableOpacity
+              style={[styles.actionBtn, { flex: 1, backgroundColor: COLORS.background, borderColor: COLORS.border, borderWidth: 1 }]}
               onPress={() => handleAccountAction(emp._id, emp.approvalStatus === 'APPROVED' ? 'REJECTED' : 'APPROVED', emp.name)}
             >
               <Text style={[styles.actionBtnText, { color: COLORS.textSecondary }]}>
@@ -243,12 +243,12 @@ export default function ApprovalScreen() {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
-      
+
       {/* Header */}
       <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, 16) : 16 }]}>
         <View>
           <Text style={styles.headerLabel}>Admin Portal</Text>
-          <Text style={styles.headerTitle}>Review Center</Text>
+          <Text style={styles.headerTitle}>Approvals</Text>
         </View>
         <TouchableOpacity style={styles.syncBtn} onPress={onRefresh}>
           <Ionicons name="refresh" size={20} color={COLORS.white} />
@@ -257,17 +257,17 @@ export default function ApprovalScreen() {
 
       {/* Tabs */}
       <View style={styles.tabContainer}>
-        <TabButton 
-          title="Check-ins" 
-          active={activeTab === 'checkins'} 
+        <TabButton
+          title="Check-ins"
+          active={activeTab === 'checkins'}
           icon="time-outline"
-          onPress={() => setActiveTab('checkins')} 
+          onPress={() => setActiveTab('checkins')}
         />
-        <TabButton 
-          title="Accounts" 
-          active={activeTab === 'accounts'} 
+        <TabButton
+          title="Accounts"
+          active={activeTab === 'accounts'}
           icon="person-add-outline"
-          onPress={() => setActiveTab('accounts')} 
+          onPress={() => setActiveTab('accounts')}
         />
       </View>
 
@@ -276,11 +276,11 @@ export default function ApprovalScreen() {
         <View style={styles.filtersWrapper}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterList}>
             {['ALL', 'PENDING', 'APPROVED', 'REJECTED'].map(s => (
-              <FilterBadge 
-                key={s} 
-                label={s} 
-                active={accountStatus === s} 
-                onPress={() => setAccountStatus(s)} 
+              <FilterBadge
+                key={s}
+                label={s}
+                active={accountStatus === s}
+                onPress={() => setAccountStatus(s)}
               />
             ))}
           </ScrollView>
@@ -350,7 +350,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     ...SHADOWS.md,
   },
-  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2 },
+  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '700', letterSpacing: 1.2 },
   headerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.white, marginTop: 4 },
   syncBtn: {
     width: 44, height: 44, borderRadius: 14,
@@ -378,9 +378,9 @@ const styles = StyleSheet.create({
   // Filters
   filtersWrapper: { paddingHorizontal: SPACING.md, gap: SPACING.sm, marginBottom: SPACING.md },
   filterList: { gap: 8, paddingBottom: 4 },
-  filterBadge: { 
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.md, 
-    backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border 
+  filterBadge: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: RADIUS.md,
+    backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border
   },
   filterBadgeActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
   filterBadgeText: { fontSize: 11, fontWeight: '800', color: COLORS.textSecondary },

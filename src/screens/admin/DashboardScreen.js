@@ -12,8 +12,11 @@ import {
   Image,
   Dimensions,
   Modal,
+  KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import api from '../../services/api';
 import { API_BASE_URL, FRONTEND_BASE_URL } from '../../utils/config';
@@ -31,9 +34,9 @@ const getImageUrl = (url) => {
   // Handle case where profilePicture might be an object { url: '...', secure_url: '...' }
   const actualUrl = typeof url === 'object' ? (url.secure_url || url.url || url.path) : url;
   if (!actualUrl || typeof actualUrl !== 'string' || actualUrl === 'null' || actualUrl === 'undefined') return null;
-  
+
   if (actualUrl.startsWith('http')) return actualUrl;
-  
+
   // Handle static assets from the frontend web app
   if (actualUrl.includes('assets/') || actualUrl.includes('emp_')) {
     return `${FRONTEND_BASE_URL}${actualUrl.startsWith('/') ? '' : '/'}${actualUrl}`;
@@ -62,7 +65,7 @@ const PodiumCard = ({ user, rank }) => {
     3: { color: '#D97706', label: '3rd', bg: '#FFEDD5' },
   };
   const cfg = rankConfig[rank];
-  const initials = user.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+  const initials = (user.name || '').split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || '??';
 
   return (
     <View style={[styles.podiumCard, { borderColor: cfg.color }]}>
@@ -71,9 +74,9 @@ const PodiumCard = ({ user, rank }) => {
       </View>
       <View style={styles.podiumAvatar}>
         {user.profilePicture ? (
-          <Image 
-            source={{ uri: getImageUrl(user.profilePicture) }} 
-            style={styles.podiumImg} 
+          <Image
+            source={{ uri: getImageUrl(user.profilePicture) }}
+            style={styles.podiumImg}
             resizeMode="cover"
           />
         ) : (
@@ -104,6 +107,13 @@ export default function DashboardScreen() {
   const [search, setSearch] = useState('');
   const [selectedEmp, setSelectedEmp] = useState(null);
 
+  // Feedback States
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackPoints, setFeedbackPoints] = useState(0);
+  const [feedbackImage, setFeedbackImage] = useState(null);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
+
   const fetchDashboardData = useCallback(async () => {
     try {
       const { data } = await api.get('/admin/dashboard');
@@ -119,6 +129,59 @@ export default function DashboardScreen() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setFeedbackImage(result.assets[0].uri);
+    }
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) {
+      Alert.alert('Error', 'Please enter feedback text');
+      return;
+    }
+
+    setSubmittingFeedback(true);
+    try {
+      const formData = new FormData();
+      formData.append('text', feedbackText);
+      formData.append('points', feedbackPoints.toString());
+
+      if (feedbackImage) {
+        const uriParts = feedbackImage.split('.');
+        const fileType = uriParts[uriParts.length - 1];
+        formData.append('image', {
+          uri: feedbackImage,
+          name: `photo.${fileType}`,
+          type: `image/${fileType}`,
+        });
+      }
+
+      await api.post(`/admin/users/${selectedEmp._id}/feedback`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      Alert.alert('Success', 'Feedback submitted successfully');
+      setFeedbackText('');
+      setFeedbackPoints(0);
+      setFeedbackImage(null);
+      setShowFeedbackForm(false);
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Feedback error:', error);
+      Alert.alert('Error', 'Failed to submit feedback');
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -177,9 +240,9 @@ export default function DashboardScreen() {
               <Ionicons name="trophy" size={20} color="#EAB308" />
               <Text style={styles.sectionTitle}>Monthly Top Performers</Text>
             </View>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.podiumList}
               snapToInterval={PODIUM_CARD_WIDTH + SPACING.md}
               decelerationRate="fast"
@@ -242,9 +305,9 @@ export default function DashboardScreen() {
                   </View>
                   <View style={styles.listAvatar}>
                     {item.profilePicture ? (
-                      <Image 
-                        source={{ uri: getImageUrl(item.profilePicture) }} 
-                        style={styles.avatarImg} 
+                      <Image
+                        source={{ uri: getImageUrl(item.profilePicture) }}
+                        style={styles.avatarImg}
                         resizeMode="cover"
                       />
                     ) : (
@@ -286,10 +349,13 @@ export default function DashboardScreen() {
         onRequestClose={() => setSelectedEmp(null)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <View style={styles.modalHandle} />
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setSelectedEmp(null)}>
+              <TouchableOpacity style={styles.closeBtn} onPress={() => {
+                setSelectedEmp(null);
+                setShowFeedbackForm(false);
+              }}>
                 <Ionicons name="close" size={24} color={COLORS.textMain} />
               </TouchableOpacity>
             </View>
@@ -299,14 +365,14 @@ export default function DashboardScreen() {
                 <View style={styles.modalProfileSection}>
                   <View style={styles.modalAvatar}>
                     {selectedEmp.profilePicture ? (
-                      <Image 
-                        source={{ uri: getImageUrl(selectedEmp.profilePicture) }} 
-                        style={styles.modalImg} 
+                      <Image
+                        source={{ uri: getImageUrl(selectedEmp.profilePicture) }}
+                        style={styles.modalImg}
                         resizeMode="cover"
                       />
                     ) : (
                       <Text style={styles.modalInitials}>
-                        {selectedEmp.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        {(selectedEmp.name || '').split(' ').map(n => n[0]).filter(Boolean).join('').slice(0, 2).toUpperCase() || '??'}
                       </Text>
                     )}
                   </View>
@@ -336,7 +402,9 @@ export default function DashboardScreen() {
                   </View>
                 </View>
 
-                <View style={styles.modalInfoSection}>
+
+
+                {/* <View style={styles.modalInfoSection}>
                   <Text style={styles.modalSectionTitle}>Performance Insights</Text>
                   <View style={styles.insightCard}>
                     <Ionicons name="information-circle-outline" size={20} color={COLORS.primary} />
@@ -344,18 +412,113 @@ export default function DashboardScreen() {
                       This employee is currently ranked in the top {Math.round((selectedEmp.rank / (stats?.totalEmployees || 1)) * 100)}% of the workforce.
                     </Text>
                   </View>
-                </View>
-
+                </View> */}
+                {/* 
                 <TouchableOpacity
                   style={styles.modalActionBtn}
-                  onPress={() => setSelectedEmp(null)}
+                  onPress={() => {
+                    setSelectedEmp(null);
+                    setShowFeedbackForm(false);
+                  }}
                 >
                   <Text style={styles.modalActionText}>Close Details</Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+
+                <View style={styles.modalInfoSection}>
+                  <Text style={styles.modalSectionTitle}>Admin Controls</Text>
+                  {!showFeedbackForm ? (
+                    <TouchableOpacity
+                      style={styles.giveFeedbackBtn}
+                      onPress={() => {
+                        setFeedbackPoints(0);
+                        setShowFeedbackForm(true);
+                      }}
+                    >
+                      <Ionicons name="chatbubble-ellipses-outline" size={20} color={COLORS.white} />
+                      <Text style={styles.giveFeedbackText}>Send Feedback & Points</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.feedbackForm}>
+                      <View style={styles.formHeader}>
+                        <Text style={styles.formTitle}>New Feedback</Text>
+                        <TouchableOpacity onPress={() => setShowFeedbackForm(false)}>
+                          <Text style={styles.cancelLink}>Cancel</Text>
+                        </TouchableOpacity>
+                      </View>
+
+                      <TextInput
+                        style={styles.feedbackInput}
+                        placeholder="What would you like to tell the employee?"
+                        multiline
+                        numberOfLines={4}
+                        value={feedbackText}
+                        onChangeText={setFeedbackText}
+                        placeholderTextColor={COLORS.textMuted}
+                      />
+
+                      <View style={styles.pointsRow}>
+                        <Text style={styles.pointsLabel}>Adjustment Points:</Text>
+                        <View style={styles.pointsControls}>
+                          <TouchableOpacity onPress={() => setFeedbackPoints(p => p - 1)} style={styles.pointBtnSmall}>
+                            <Ionicons name="remove" size={14} color={COLORS.textMain} />
+                          </TouchableOpacity>
+
+                          <View style={styles.pointsInputWrapper}>
+                            <TextInput
+                              style={[styles.pointsInput, feedbackPoints > 0 ? styles.positive : feedbackPoints < 0 ? styles.negative : null]}
+                              keyboardType="numbers-and-punctuation"
+                              value={feedbackPoints === 0 ? '' : feedbackPoints.toString()}
+                              placeholder="0"
+                              onChangeText={(val) => {
+                                if (val === '' || val === '-') {
+                                  setFeedbackPoints(val === '-' ? '-' : 0);
+                                  return;
+                                }
+                                const num = parseInt(val);
+                                if (!isNaN(num)) setFeedbackPoints(num);
+                              }}
+                            />
+                          </View>
+
+                          <TouchableOpacity onPress={() => setFeedbackPoints(p => (typeof p === 'number' ? p : 0) + 1)} style={styles.pointBtnSmall}>
+                            <Ionicons name="add" size={14} color={COLORS.textMain} />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+
+                      <TouchableOpacity style={styles.imagePickerBtn} onPress={handlePickImage}>
+                        <Ionicons name="camera-outline" size={20} color={COLORS.primary} />
+                        <Text style={styles.imagePickerText}>
+                          {feedbackImage ? 'Image Attached' : 'Attach Photo (Optional)'}
+                        </Text>
+                        {feedbackImage && (
+                          <TouchableOpacity onPress={() => setFeedbackImage(null)} style={styles.removeImage}>
+                            <Ionicons name="close-circle" size={18} color="#ef4444" />
+                          </TouchableOpacity>
+                        )}
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.submitFeedbackBtn, submittingFeedback && styles.disabledBtn]}
+                        onPress={handleFeedbackSubmit}
+                        disabled={submittingFeedback}
+                      >
+                        {submittingFeedback ? (
+                          <Text style={styles.submitFeedbackText}>Submitting...</Text>
+                        ) : (
+                          <>
+                            <Ionicons name="send" size={18} color={COLORS.white} />
+                            <Text style={styles.submitFeedbackText}>Send Message</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
                 <View style={{ height: insets.bottom + 20 }} />
               </ScrollView>
             )}
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </View>
@@ -406,7 +569,7 @@ const styles = StyleSheet.create({
   // Podium
   podiumList: { paddingHorizontal: 4, paddingBottom: 10, paddingTop: 16, gap: SPACING.md },
   podiumCard: {
-    width: PODIUM_CARD_WIDTH, 
+    width: PODIUM_CARD_WIDTH,
     backgroundColor: COLORS.white, borderRadius: RADIUS.xl,
     padding: SPACING.lg, alignItems: 'center', borderWidth: 2,
     ...SHADOWS.md,
@@ -446,10 +609,10 @@ const styles = StyleSheet.create({
   leaderRank: { width: 40, alignItems: 'center' },
   rankText: { fontSize: 14, fontWeight: '800', color: COLORS.textMuted },
   rankTextTop: { fontSize: 18 },
-  listAvatar: { 
-    width: 36, height: 36, borderRadius: 12, 
-    backgroundColor: COLORS.indigo50, justifyContent: 'center', 
-    alignItems: 'center', overflow: 'hidden' 
+  listAvatar: {
+    width: 36, height: 36, borderRadius: 12,
+    backgroundColor: COLORS.indigo50, justifyContent: 'center',
+    alignItems: 'center', overflow: 'hidden'
   },
   avatarImg: { width: '100%', height: '100%' },
   listAvatarText: { fontSize: 14, fontWeight: '800', color: COLORS.primary },
@@ -509,12 +672,76 @@ const styles = StyleSheet.create({
   modalStatLabel: { fontSize: 10, fontWeight: '800', color: COLORS.textMuted, marginTop: 4 },
 
   modalInfoSection: { marginBottom: SPACING.xxl },
-  modalSectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textMain, marginBottom: 12 },
+  modalSectionTitle: { fontSize: 16, fontWeight: '800', color: COLORS.textMain, marginBottom: 16 },
+
+  // Feedback Form
+  giveFeedbackBtn: {
+    flexDirection: 'row', backgroundColor: COLORS.primary, padding: 16,
+    borderRadius: RADIUS.lg, alignItems: 'center', justifyContent: 'center', gap: 10,
+    ...SHADOWS.md,
+  },
+  giveFeedbackText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+
+  feedbackForm: {
+    backgroundColor: '#F1F5F9', padding: SPACING.lg, borderRadius: RADIUS.xl,
+    borderWidth: 1, borderColor: COLORS.border,
+  },
+  formHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  formTitle: { fontSize: 14, fontWeight: '800', color: COLORS.textMain },
+  cancelLink: { fontSize: 12, fontWeight: '700', color: '#64748b' },
+  feedbackInput: {
+    backgroundColor: COLORS.white, borderRadius: RADIUS.md, padding: 12,
+    fontSize: 14, color: COLORS.textMain, height: 100, textAlignVertical: 'top',
+    borderWidth: 1, borderColor: COLORS.border, marginBottom: 16,
+  },
+  pointsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  pointsLabel: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
+  pointsControls: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  pointBtnSmall: {
+    width: 32, height: 32, borderRadius: 8, backgroundColor: COLORS.white,
+    justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: COLORS.border,
+  },
+  pointsInputWrapper: {
+    backgroundColor: COLORS.white,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    width: 60,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pointsInput: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: COLORS.textMain,
+    textAlign: 'center',
+    width: '100%',
+    padding: 0,
+  },
+  positive: { color: '#059669' },
+  negative: { color: '#DC2626' },
+
+  imagePickerBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: COLORS.white,
+    padding: 12, borderRadius: RADIUS.md, borderWidth: 1, borderColor: COLORS.border,
+    marginBottom: 20,
+  },
+  imagePickerText: { fontSize: 13, fontWeight: '700', color: COLORS.primary },
+  removeImage: { position: 'absolute', right: 10 },
+
+  submitFeedbackBtn: {
+    flexDirection: 'row', backgroundColor: COLORS.primary, padding: 14,
+    borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center', gap: 10,
+  },
+  disabledBtn: { opacity: 0.7 },
+  submitFeedbackText: { color: COLORS.white, fontSize: 14, fontWeight: '800' },
+
   insightCard: {
     flexDirection: 'row', backgroundColor: COLORS.indigo50, padding: SPACING.lg,
     borderRadius: RADIUS.lg, gap: 12, alignItems: 'center',
   },
-  insightText: { flex: 1, fontSize: 13, color: COLORS.primary, fontWeight: '600', lineHeight: 18 },
+  insightText: { flex: 1, fontSize: 10, color: COLORS.primary, fontWeight: '600', lineHeight: 18 },
 
   modalActionBtn: {
     backgroundColor: COLORS.primary, paddingVertical: 16, borderRadius: RADIUS.xl,
