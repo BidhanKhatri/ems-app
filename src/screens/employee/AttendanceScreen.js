@@ -22,6 +22,7 @@ import { API_BASE_URL } from '../../utils/config';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 import useAuthStore from '../../store/useAuthStore';
 import SlideButton from '../../components/SlideButton';
+import { useSocket } from '../../context/SocketContext';
 
 export default function AttendanceScreen() {
   const insets = useSafeAreaInsets();
@@ -95,6 +96,28 @@ export default function AttendanceScreen() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Real-time updates via Socket
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      console.log('Real-time attendance/leaderboard update received');
+      loadData();
+    };
+
+    socket.on('leaderboard:update', handleUpdate);
+    socket.on('admin:dashboard-update', handleUpdate); // For global changes
+    socket.on('settings:update', handleUpdate);
+
+    return () => {
+      socket.off('leaderboard:update', handleUpdate);
+      socket.off('admin:dashboard-update', handleUpdate);
+      socket.off('settings:update', handleUpdate);
+    };
+  }, [socket, loadData]);
 
   const onRefresh = async () => {
     setRefreshing(true);

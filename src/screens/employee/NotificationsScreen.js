@@ -21,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import api from '../../services/api';
 import { API_BASE_URL } from '../../utils/config';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
+import { useSocket } from '../../context/SocketContext';
 
 // ─── Filter tabs ────────────────────────────────────────────────────────────
 const FILTERS = [
@@ -162,6 +163,24 @@ export default function NotificationsScreen() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Real-time updates via Socket
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification) => {
+      console.log('Real-time notification received:', notification);
+      load(false); // Refresh without full page loading spinner
+    };
+
+    socket.on('notification:received', handleNewNotification);
+
+    return () => {
+      socket.off('notification:received', handleNewNotification);
+    };
+  }, [socket]);
 
   const onRefresh = () => { setRefreshing(true); load(false); };
 

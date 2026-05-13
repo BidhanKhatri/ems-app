@@ -13,6 +13,8 @@ import { COLORS } from './src/theme/theme';
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
+import { SocketProvider } from './src/context/SocketContext';
+
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
 
@@ -70,11 +72,13 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
-      <StatusBar style="dark" />
-      <RootNavigator />
-      <LogoutLoader />
-    </NavigationContainer>
+    <SocketProvider>
+      <NavigationContainer>
+        <StatusBar style="dark" />
+        <RootNavigator />
+        <LogoutLoader />
+      </NavigationContainer>
+    </SocketProvider>
   );
 }
 

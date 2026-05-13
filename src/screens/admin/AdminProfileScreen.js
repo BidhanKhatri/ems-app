@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Platform, Modal, ScrollView, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useAuthStore from '../../store/useAuthStore';
 import { COLORS, SPACING, RADIUS } from '../../theme/theme';
+import { FRONTEND_BASE_URL } from '../../utils/config';
 
 export default function AdminProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -42,6 +43,27 @@ export default function AdminProfileScreen() {
           </View>
           <View style={styles.roleBadge}>
             <Text style={styles.roleText}>{user?.role || 'ADMIN'}</Text>
+          </View>
+        </View>
+
+        {/* Quick Access Group */}
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>Quick Access</Text>
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.infoRow}
+              activeOpacity={0.7}
+              onPress={() => Linking.openURL(FRONTEND_BASE_URL)}
+            >
+              <View style={styles.iconBox}>
+                <Ionicons name="globe-outline" size={18} color={COLORS.primary} />
+              </View>
+              <View style={styles.infoContent}>
+                <Text style={styles.infoLabel}>Web Portal</Text>
+                <Text style={styles.infoValue}>Full administrative web access</Text>
+              </View>
+              <Ionicons name="open-outline" size={16} color={COLORS.textMuted} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -130,8 +152,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-end',
   },
-  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', letterSpacing: 1 },
-  headerTitle: { fontSize: 22, fontWeight: '800', color: COLORS.white, marginTop: 2 },
+  headerLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '600', letterSpacing: 1 },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: COLORS.white, marginTop: 2 },
   headerIcon: {
     width: 42, height: 42, borderRadius: RADIUS.md,
     backgroundColor: 'rgba(255,255,255,0.15)',

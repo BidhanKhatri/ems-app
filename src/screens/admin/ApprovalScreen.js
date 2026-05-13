@@ -18,14 +18,24 @@ import api from '../../services/api';
 import { API_BASE_URL, FRONTEND_BASE_URL } from '../../utils/config';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 import PageLoader from '../../components/PageLoader';
+import { useSocket } from '../../context/SocketContext';
 
-const TabButton = ({ title, active, onPress, icon }) => (
+const TabButton = ({ title, active, onPress, icon, count }) => (
   <TouchableOpacity
     style={[styles.tabButton, active && styles.tabButtonActive]}
     onPress={onPress}
   >
-    <Ionicons name={icon} size={18} color={active ? COLORS.white : COLORS.textMuted} />
-    <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>{title}</Text>
+    <View style={styles.tabContent}>
+      <Ionicons name={icon} size={18} color={active ? COLORS.white : COLORS.textMuted} />
+      <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>{title}</Text>
+      {count > 0 && (
+        <View style={[styles.badge, active ? styles.badgeActive : styles.badgeInactive]}>
+          <Text style={[styles.badgeText, active && styles.badgeTextActive]}>
+            {count > 10 ? '9+' : count}
+          </Text>
+        </View>
+      )}
+    </View>
   </TouchableOpacity>
 );
 
@@ -64,6 +74,7 @@ export default function ApprovalScreen() {
   // Data state
   const [checkins, setCheckins] = useState([]);
   const [accounts, setAccounts] = useState([]);
+  const [counts, setCounts] = useState({ checkins: 0, accounts: 0 });
 
   // Account Filters
   const [accountStatus, setAccountStatus] = useState('PENDING'); // ALL, PENDING, APPROVED, REJECTED
@@ -74,6 +85,13 @@ export default function ApprovalScreen() {
     else setLoading(true);
 
     try {
+      // Always fetch counts for badges
+      const { data: dashboardStats } = await api.get('/admin/dashboard');
+      setCounts({
+        checkins: dashboardStats.pendingCheckins || 0,
+        accounts: dashboardStats.pendingAccounts || 0
+      });
+
       if (activeTab === 'checkins') {
         const { data } = await api.get('/admin/approvals');
         setCheckins(data);
@@ -98,6 +116,25 @@ export default function ApprovalScreen() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  // Real-time updates via Socket
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      console.log('Real-time approval update received');
+      fetchData();
+    };
+
+    // Refresh when admin dashboard updates or specifically for leaderboard/approvals
+    socket.on('admin:dashboard-update', handleUpdate);
+
+    return () => {
+      socket.off('admin:dashboard-update', handleUpdate);
+    };
+  }, [socket, fetchData]);
 
   const onRefresh = () => {
     fetchData(true);
@@ -248,7 +285,7 @@ export default function ApprovalScreen() {
       <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? Math.max(insets.top, 16) : 16 }]}>
         <View>
           <Text style={styles.headerLabel}>Admin Portal</Text>
-          <Text style={styles.headerTitle}>Approvals</Text>
+          <Text style={styles.headerTitle}>Approval Notifications</Text>
         </View>
         <TouchableOpacity style={styles.syncBtn} onPress={onRefresh}>
           <Ionicons name="refresh" size={20} color={COLORS.white} />
@@ -261,12 +298,14 @@ export default function ApprovalScreen() {
           title="Check-ins"
           active={activeTab === 'checkins'}
           icon="time-outline"
+          count={counts.checkins}
           onPress={() => setActiveTab('checkins')}
         />
         <TabButton
           title="Accounts"
           active={activeTab === 'accounts'}
           icon="person-add-outline"
+          count={counts.accounts}
           onPress={() => setActiveTab('accounts')}
         />
       </View>
@@ -350,8 +389,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     ...SHADOWS.md,
   },
-  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '700', letterSpacing: 1.2 },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.white, marginTop: 4 },
+  headerLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '700', letterSpacing: 1.2 },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: COLORS.white, marginTop: 4 },
   syncBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -368,12 +407,37 @@ const styles = StyleSheet.create({
     ...SHADOWS.sm,
   },
   tabButton: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 8, paddingVertical: 10, borderRadius: RADIUS.md,
+    flex: 1, paddingVertical: 10, borderRadius: RADIUS.md,
   },
   tabButtonActive: { backgroundColor: COLORS.primary, ...SHADOWS.md },
+  tabContent: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 8,
+  },
   tabButtonText: { fontSize: 13, fontWeight: '700', color: COLORS.textSecondary },
   tabButtonTextActive: { color: COLORS.white },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    minWidth: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeInactive: {
+    backgroundColor: COLORS.indigo50,
+  },
+  badgeActive: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: COLORS.primary,
+  },
+  badgeTextActive: {
+    color: COLORS.white,
+  },
 
   // Filters
   filtersWrapper: { paddingHorizontal: SPACING.md, gap: SPACING.sm, marginBottom: SPACING.md },

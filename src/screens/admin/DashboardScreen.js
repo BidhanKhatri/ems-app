@@ -22,6 +22,7 @@ import api from '../../services/api';
 import { API_BASE_URL, FRONTEND_BASE_URL } from '../../utils/config';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 import PageLoader from '../../components/PageLoader';
+import { useSocket } from '../../context/SocketContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -129,6 +130,26 @@ export default function DashboardScreen() {
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
+
+  // Socket for Real-time updates
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleUpdate = () => {
+      console.log('Real-time dashboard update received');
+      fetchDashboardData();
+    };
+
+    socket.on('admin:dashboard-update', handleUpdate);
+    socket.on('leaderboard:update', handleUpdate);
+
+    return () => {
+      socket.off('admin:dashboard-update', handleUpdate);
+      socket.off('leaderboard:update', handleUpdate);
+    };
+  }, [socket, fetchDashboardData]);
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -431,6 +452,8 @@ export default function DashboardScreen() {
                       style={styles.giveFeedbackBtn}
                       onPress={() => {
                         setFeedbackPoints(0);
+                        setFeedbackText('');
+                        setFeedbackImage(null);
                         setShowFeedbackForm(true);
                       }}
                     >
@@ -538,8 +561,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     ...SHADOWS.md,
   },
-  headerLabel: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '700', letterSpacing: 1.2 },
-  headerTitle: { fontSize: 24, fontWeight: '900', color: COLORS.white, marginTop: 4, letterSpacing: -0.5 },
+  headerLabel: { fontSize: 10, color: 'rgba(255,255,255,0.7)', fontWeight: '700', letterSpacing: 1.2 },
+  headerTitle: { fontSize: 20, fontWeight: '900', color: COLORS.white, marginTop: 4, letterSpacing: -0.5 },
   syncBtn: {
     width: 44, height: 44, borderRadius: 14,
     backgroundColor: 'rgba(255,255,255,0.2)',
