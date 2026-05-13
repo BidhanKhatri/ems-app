@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, StatusBar, Platform, Image, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import useAuthStore from '../../store/useAuthStore';
-import { API_BASE_URL } from '../../utils/config';
+import { API_BASE_URL, FRONTEND_BASE_URL } from '../../utils/config';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 
@@ -74,7 +74,7 @@ export default function SettingsScreen() {
               <TouchableOpacity
                 style={styles.settingItem}
                 activeOpacity={0.7}
-                onPress={() => Linking.openURL('https://staffingbetit.com')}
+                onPress={() => Linking.openURL(FRONTEND_BASE_URL)}
               >
                 <View style={styles.settingLeft}>
                   <View style={[styles.iconBox, { backgroundColor: COLORS.indigo50 }]}>
