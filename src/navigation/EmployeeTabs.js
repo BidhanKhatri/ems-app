@@ -6,6 +6,8 @@ import AttendanceScreen from '../screens/employee/AttendanceScreen';
 import NotificationsScreen from '../screens/employee/NotificationsScreen';
 import SettingsScreen from '../screens/employee/SettingsScreen';
 import { COLORS, SHADOWS } from '../theme/theme';
+import useNotificationStore from '../store/useNotificationStore';
+import { useSocket } from '../context/SocketContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,6 +22,29 @@ const FAB_SIZE = 56;
 const SIDE_BTN_SIZE = 42;
 
 function CustomTabBar({ state, navigation }) {
+  const { unreadCount, fetchUnreadCount, incrementUnreadCount } = useNotificationStore();
+  const { socket } = useSocket();
+
+  React.useEffect(() => {
+    fetchUnreadCount();
+  }, []);
+
+  React.useEffect(() => {
+    if (!socket) return;
+
+    const handleNewNotification = (notification) => {
+      console.log('Real-time tab notification received:', notification);
+      // Re-fetch the actual count from the server for accuracy
+      fetchUnreadCount();
+    };
+
+    socket.on('notification:received', handleNewNotification);
+
+    return () => {
+      socket.off('notification:received', handleNewNotification);
+    };
+  }, [socket]);
+
   return (
     <View style={styles.outerWrap}>
       {/* Main bar card */}
@@ -68,6 +93,13 @@ function CustomTabBar({ state, navigation }) {
                     size={20}
                     color={COLORS.white}
                   />
+                  {tab.name === 'Notifications' && unreadCount > 0 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={[styles.tabLabel, isFocused && styles.tabLabelActive]}>
                   {tab.label}
@@ -227,5 +259,25 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.2,
     elevation: 12,
+  },
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    paddingHorizontal: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.white,
+    zIndex: 10,
+  },
+  badgeText: {
+    fontSize: 8,
+    fontWeight: '900',
+    color: COLORS.white,
   },
 });

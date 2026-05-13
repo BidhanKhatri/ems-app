@@ -22,6 +22,7 @@ import api from '../../services/api';
 import { API_BASE_URL } from '../../utils/config';
 import { COLORS, SPACING, RADIUS, SHADOWS } from '../../theme/theme';
 import { useSocket } from '../../context/SocketContext';
+import useNotificationStore from '../../store/useNotificationStore';
 
 // ─── Filter tabs ────────────────────────────────────────────────────────────
 const FILTERS = [
@@ -148,12 +149,19 @@ export default function NotificationsScreen() {
   const [previewUri, setPreviewUri] = useState(null);
   const [previewVisible, setPreviewVisible] = useState(false);
 
+  const { fetchUnreadCount, setUnreadCount } = useNotificationStore();
+
   // ── API (unchanged) ──────────────────────────────────────────────────────
   const load = async (showLoading = true) => {
     if (showLoading) setLoading(true);
     try {
       const { data } = await api.get('/activity/notifications', { params: { sort: 'latest' } });
-      setItems(Array.isArray(data) ? data : []);
+      const notifications = Array.isArray(data) ? data : [];
+      setItems(notifications);
+      
+      // Update global unread count
+      const count = notifications.filter(n => !n.isRead).length;
+      setUnreadCount(count);
     } catch (error) {
       Alert.alert('Error', error?.response?.data?.message || 'Failed to load notifications');
     } finally {
@@ -162,7 +170,9 @@ export default function NotificationsScreen() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { 
+    load(); 
+  }, []);
 
   // Real-time updates via Socket
   const { socket } = useSocket();
@@ -187,7 +197,12 @@ export default function NotificationsScreen() {
   const markRead = async (id) => {
     try {
       await api.patch(`/activity/notifications/${id}/read`);
-      setItems((prev) => prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)));
+      setItems((prev) => {
+        const newItems = prev.map((n) => (n._id === id ? { ...n, isRead: true } : n));
+        const count = newItems.filter(n => !n.isRead).length;
+        setUnreadCount(count);
+        return newItems;
+      });
     } catch (error) {
       Alert.alert('Error', error?.response?.data?.message || 'Failed to mark read');
     }

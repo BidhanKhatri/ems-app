@@ -131,8 +131,18 @@ export default function ApprovalScreen() {
     // Refresh when admin dashboard updates or specifically for leaderboard/approvals
     socket.on('admin:dashboard-update', handleUpdate);
 
+    const handleNewNotification = (data) => {
+      if (data.metadata?.type === 'APPROVAL_REQUEST') {
+        Alert.alert(data.title || 'New Request', data.message || 'A new approval request has been received.');
+        fetchData();
+      }
+    };
+
+    socket.on('notification:received', handleNewNotification);
+
     return () => {
       socket.off('admin:dashboard-update', handleUpdate);
+      socket.off('notification:received', handleNewNotification);
     };
   }, [socket, fetchData]);
 
@@ -143,32 +153,38 @@ export default function ApprovalScreen() {
   const handleCheckinAction = async (id, isApproved) => {
     try {
       await api.post(`/admin/approve/${id}`, { isApproved });
+      Alert.alert('Success', `Check-in ${isApproved ? 'approved' : 'rejected'} successfully`);
       fetchData();
     } catch (error) {
       Alert.alert('Error', 'Action failed');
     }
   };
 
-  const handleAccountAction = (userId, status, name) => {
+  const handleAccountAction = async (userId, status, name) => {
+    try {
+      await api.patch(`/admin/account-approvals/${userId}`, { status });
+      Alert.alert('Success', `Account for ${name} has been ${status.toLowerCase()}`);
+      fetchData();
+    } catch (error) {
+      Alert.alert('Error', 'Action failed');
+    }
+  };
+
+  const confirmAccountAction = (userId, status, name) => {
     Alert.alert(
       'Confirm Action',
       `Are you sure you want to ${status.toLowerCase()} access for ${name}?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Confirm',
-          onPress: async () => {
-            try {
-              await api.patch(`/admin/account-approvals/${userId}`, { status });
-              fetchData();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to update account status');
-            }
-          }
+        { 
+          text: 'Confirm', 
+          style: status === 'REJECTED' ? 'destructive' : 'default',
+          onPress: () => handleAccountAction(userId, status, name)
         }
       ]
     );
   };
+
 
   const renderCheckinItem = (req) => (
     <View key={req._id} style={styles.card}>
@@ -251,13 +267,13 @@ export default function ApprovalScreen() {
             <>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.rejectBtn, { flex: 1 }]}
-                onPress={() => handleAccountAction(emp._id, 'REJECTED', emp.name)}
+                onPress={() => confirmAccountAction(emp._id, 'REJECTED', emp.name)}
               >
                 <Text style={[styles.actionBtnText, styles.rejectBtnText]}>Reject Account</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionBtn, styles.approveBtn, { flex: 1 }]}
-                onPress={() => handleAccountAction(emp._id, 'APPROVED', emp.name)}
+                onPress={() => confirmAccountAction(emp._id, 'APPROVED', emp.name)}
               >
                 <Text style={[styles.actionBtnText, styles.approveBtnText]}>Approve Account</Text>
               </TouchableOpacity>
@@ -265,7 +281,7 @@ export default function ApprovalScreen() {
           ) : (
             <TouchableOpacity
               style={[styles.actionBtn, { flex: 1, backgroundColor: COLORS.background, borderColor: COLORS.border, borderWidth: 1 }]}
-              onPress={() => handleAccountAction(emp._id, emp.approvalStatus === 'APPROVED' ? 'REJECTED' : 'APPROVED', emp.name)}
+              onPress={() => confirmAccountAction(emp._id, emp.approvalStatus === 'APPROVED' ? 'REJECTED' : 'APPROVED', emp.name)}
             >
               <Text style={[styles.actionBtnText, { color: COLORS.textSecondary }]}>
                 {emp.approvalStatus === 'APPROVED' ? 'Revoke Access' : 'Restore Access'}

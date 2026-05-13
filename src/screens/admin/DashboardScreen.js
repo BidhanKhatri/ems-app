@@ -145,9 +145,20 @@ export default function DashboardScreen() {
     socket.on('admin:dashboard-update', handleUpdate);
     socket.on('leaderboard:update', handleUpdate);
 
+    const handleNewNotification = (data) => {
+      // Show alert for specific events like new approval requests
+      if (data.metadata?.type === 'APPROVAL_REQUEST') {
+        Alert.alert('New Request', data.message || 'A new approval request has been received.');
+        fetchDashboardData();
+      }
+    };
+
+    socket.on('notification:received', handleNewNotification);
+
     return () => {
       socket.off('admin:dashboard-update', handleUpdate);
       socket.off('leaderboard:update', handleUpdate);
+      socket.off('notification:received', handleNewNotification);
     };
   }, [socket, fetchDashboardData]);
 
